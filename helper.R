@@ -29,9 +29,6 @@ read_my_file <- function(fp)
   } else if(ext %in% c("xlsx", "xls"))
   {
     out <- readxl::read_excel(fp)
-  } else if(ext %in% "rds")
-  {
-    out <- readRDS(fp)
   }
   attr(out, "extension") <- ext
   out
