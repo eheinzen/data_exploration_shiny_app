@@ -4,6 +4,12 @@ News and Updates for this Shiny App:
 
 - Updated code based on `dq` updates.
 
+- Added notes about compute time.
+
+- Removed support for `.rds` files.
+
+- Made data import a whole tab, with options for column types.
+
 # v2.0.0, 08/20/2019
 
 - Used `dq` package.
