@@ -11,18 +11,20 @@ zipped <- function(...)
   unlist(lapply(list(...), paste0, c("", ".gz", ".bz2", ".xz", ".zip")))
 }
 
-read_my_file <- function(fp)
+with_col_types <- zipped("csv", "txt", "tab", "tsv")
+
+read_my_file <- function(fp, n_max = Inf, col_types = cols())
 {
   ext <- tools::file_ext(fp)
   if(ext %in% zipped("csv"))
   {
-    out <- read_csv(fp, col_names = TRUE, col_types = cols())
+    out <- read_csv(fp, col_names = TRUE, col_types = col_types)
   } else if(ext %in% zipped("txt"))
   {
-    out <- read_table2(fp, col_names = TRUE, col_types = cols())
+    out <- read_table2(fp, col_names = TRUE, col_types = col_types)
   } else if(ext %in% zipped("tab", "tsv"))
   {
-    out <- read_tsv(fp, col_names = TRUE, col_types = cols())
+    out <- read_tsv(fp, col_names = TRUE, col_types = col_types)
   } else if(ext %in% "sas7bdat")
   {
     out <- haven::read_sas(fp)

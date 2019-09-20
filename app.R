@@ -16,20 +16,25 @@ ui <- navbarPage(
   "Basic Data Exploration App",
   tabPanel(
     "Exploration",
-    sidebarPanel(
-      id = "sidebar",
+    mainPanel(
+      width = 12,
       tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
       ),
-      width = 3,
-      actionButton("mockstudy", "Use sample dataset..."),
-      fileInput("inputfile", NULL, buttonLabel = "...or upload a dataset", multiple = FALSE),
-      textOutput("inputfiletext"),
-      verbatimTextOutput("inputfilestr"),
-      tags$a("NEWS file", href = "NEWS.md", target = "_blank", style = "bottom: 1vh; position: absolute;")
-    ),
-    mainPanel(
       tabsetPanel(
+        tabPanel(
+          "Data Upload",
+          actionButton("mockstudy", "Use sample dataset..."),
+          fileInput("inputfile", NULL, buttonLabel = "...or upload a dataset", multiple = FALSE),
+          textOutput("inputfiletext"),
+          uiOutput("inputfileoptions"),
+          hr(),
+          actionButton("inputfilebutton", "Load/Reload data"),
+          h4("Data set structure:"),
+          verbatimTextOutput("inputfilestr"),
+          h4("File input problems:"),
+          verbatimTextOutput("inputfileproblems")
+        ),
         tabPanel(
           "Data Viewer",
           dataTableOutput("datatable")
@@ -126,8 +131,8 @@ ui <- navbarPage(
   tabPanel(
     "Documentation",
     HTML(documentation),
-    p(style="font-size: 10px; margin-top: 75px;", paste0("App version ", read.dcf("DESCRIPTION")[1, "Version"]))
-
+    p(style="font-size: 10px; margin-top: 75px;", paste0("App version ", read.dcf("DESCRIPTION")[1, "Version"])),
+    tags$a("NEWS file", href = "NEWS.md", target = "_blank")
   ),
   tabPanel("DISCLAIMER", mayoshiny::disclaimer())
 )
@@ -149,13 +154,53 @@ server <- function(input, output, session) {
     }
   })
 
-  # eventReactive avoids it being called when the app loads
-  inputData <- eventReactive(whichData$fp, {
+
+  ################## Update data entry tab ##################
+
+  output$inputfiletext <- renderText({
+    if(!is.null(whichData$fp)) paste0("File of extension '", tools::file_ext(whichData$fp), "' detected.") else ""
+  })
+
+  cn <- reactive({
     validate(
       need(!is.null(whichData$fp), "Please select a dataset.")
     )
-    read_my_file(whichData$fp)
+    if(tools::file_ext(whichData$fp) %in% with_col_types)
+    {
+      cn <- names(read_my_file(whichData$fp, n_max = 1))
+    } else NULL
+  })
+
+  output$inputfileoptions <- renderUI({
+
+    if(!is.null(cn()))
+    {
+      opts <- c(Guess = "guess", Numeric = "double", Character = "character", Date = "date", Logical = "logical", Skip = "skip")
+      uis <- map2(cn(), seq_along(cn()), ~ column(2, selectInput(paste0("column", .y), .x, opts, selectize = FALSE)))
+      fluidRow(h3("Provide column specifications:"), uis)
+    } else NULL
+  })
+
+  # eventReactive avoids it being called when the app loads
+  inputData <- eventReactive(input$inputfilebutton, {
+    validate(
+      need(!is.null(whichData$fp), "Please load the dataset.")
+    )
+    types <- map(seq_along(cn()), ~ match.fun(paste0("col_", input[[paste0("column", .x)]]))())
+    read_my_file(whichData$fp, col_types = do.call(cols, types))
   }, ignoreNULL = FALSE)
+
+  output$inputfileproblems <- renderPrint({
+    if(nrow(p <- problems(inputData())))
+    {
+      print(as.data.frame(select(p, -file)), row.names = FALSE)
+    } else cat("No problems detected.")
+  })
+
+
+  output$inputfilestr <- renderPrint({
+    utils:::str.default(inputData(), give.attr = FALSE)
+  })
 
   columnNames <- reactive(colnames(inputData()))
 
@@ -180,18 +225,6 @@ server <- function(input, output, session) {
     updateSelectInput(session, "surv.time", choices = cn())
     updateSelectInput(session, "surv.event", choices = cn("(All Events)"))
     updateSelectInput(session, "surv.x", choices = cn("(No X-Variables)"))
-  })
-
-  ################## Update side nav ##################
-
-  output$inputfiletext <- renderText({
-    dat <- inputData()
-    paste0("File of extension '", attr(dat, "extension"), "' detected: ",
-           nrow(dat), " rows and ", ncol(dat), " columns.")
-  })
-
-  output$inputfilestr <- renderPrint({
-    utils:::str.default(inputData(), give.attr = FALSE)
   })
 
   ################## Update data viewer tab ##################
