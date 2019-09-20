@@ -55,6 +55,7 @@ ui <- navbarPage(
                 column(4, numericInput("nshow1", "N Records to Show:", value = 10)),
                 column(4, numericInput("univ.cutoff", "Outlier cutoff", value = 0.05))
               ),
+              fluidRow(p("This may take some time to compute.")),
               fluidRow(tableOutput("univ.table")),
               fluidRow(
                 column(4, selectInput("univ.trendvar", "Plot Trends for", choices = " ", multiple = FALSE, selectize = FALSE))
@@ -75,6 +76,7 @@ ui <- navbarPage(
                 column(4, numericInput("nshow3", "N Records to Show:", value = 10)),
                 column(4, numericInput("byobs.cutoff", "Outlier cutoff", value = 0.05))
               ),
+              fluidRow(p("This may take some time to compute.")),
               fluidRow(
                 column(6, plotOutput("byobs.plot")),
                 column(6, tableOutput("byobs.table"))
