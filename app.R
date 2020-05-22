@@ -37,7 +37,7 @@ ui <- navbarPage(
         ),
         tabPanel(
           "Data Viewer",
-          dataTableOutput("datatable")
+          DT::dataTableOutput("datatable")
         ),
         tabPanel(
           "Summary Statistics",
@@ -229,7 +229,7 @@ server <- function(input, output, session) {
 
   ################## Update data viewer tab ##################
 
-  output$datatable <- renderDataTable({
+  output$datatable <- DT::renderDataTable({
     inputData()
   })
 
